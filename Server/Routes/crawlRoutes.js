@@ -12,6 +12,6 @@ const router = express.Router();
 //     console.log("resp : ",resp)
 // })
 
-router.get("/crawl",crawlController.startCrawl)
+router.post("/crawl",crawlController.startCrawl)
 
 export default router;
