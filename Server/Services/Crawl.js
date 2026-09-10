@@ -26,6 +26,7 @@ import axios from 'axios'
 export async function Crawl(url) {
     try {
         console.log(`URL from Services.Crawl : ${url}`)
+        return {message:`URL from Services.Crawl : ${url}`}
     } catch (error) {
         console.log(`Error from Services.Crawl : ${error.message}`)
     }
