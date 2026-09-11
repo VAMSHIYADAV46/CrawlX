@@ -18,12 +18,23 @@ try {
 
     const $ = cheerio.load(html)
 
+    let uniqueUrls = new Set()
+
     let title = $('title').text().trim()
+    $('a').each((ind,element) => {
+      let link = $(element).attr('href')
+      if(link){
+        let checkedUrl = new URL(link,url)
+        uniqueUrls.add(checkedUrl.href)
+      }
+    });
+
 
     return {
       success: true,
       url: url,
-      title: title
+      title: title,
+      uniqueUrls : uniqueUrls
     };
 } catch (error) {
     throw new Error(`Caught error while crawling : ${error.message}`)
@@ -31,10 +42,3 @@ try {
 }
 
 
-// export async function Crawl(url,maxDepth,sameDomain) {
-//     try {
-        
-//     } catch (error) {
-//         console.log(`Error from Services.Crawl : ${error.message}`)
-//     }
-// }
