@@ -1,59 +1,61 @@
 import * as cheerio from "cheerio";
 import axios from "axios";
-import {popFromSet} from '../utilities'
+import { popFirstFromSet } from "../utilities.js";
 
 export async function Crawl({ url, maxDepth, sameDomain }) {
   let visited = new Set();
   let queue = new Set();
-  queue.add(url)
-  
+  queue.add(url);
 
-  while(queue.size != 0){
-  try {
-    let currentUrl = popFromSet(queue)
-    if (!currentUrl) {
-      throw new Error("Invalid Url");
-    }
-    if (!visited.has(currentUrl)) {
-      const response = await axios.get(currentUrl, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36",
-        },
-      });
-      
-      visited.add(currentUrl);
+  let result = [];
 
+  while (queue.size != 0) {
+    try {
+      let currentUrl = popFirstFromSet(queue);
+      if (!currentUrl) {
+        throw new Error("Invalid Url");
+      }
+      if (!visited.has(currentUrl)) {
+        console.log("Crawling:", currentUrl);
+        const response = await axios.get(currentUrl, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36",
+          },
+        });
 
-      const html = response.data;
+        visited.add(currentUrl);
 
-      const $ = cheerio.load(html);
+        const html = response.data;
 
-      let uniqueUrls = new Set();
+        const $ = cheerio.load(html);
 
-      let title = $("title").text().trim();
-      $("a").each((ind, element) => {
-        let link = $(element).attr("href");
-        if (link) {
-          let checkedUrl = new URL(link, currentUrl);
-          uniqueUrls.add(checkedUrl.href);
-          queue.add(checkedUrl.href)
-        }
-      });
+        let uniqueUrls = new Set();
+
+        let title = $("title").text().trim();
+        $("a").each((ind, element) => {
+          let link = $(element).attr("href");
+          if (link) {
+            let checkedUrl = new URL(link, currentUrl);
+            if (
+              checkedUrl.protocol == "https:" ||
+              checkedUrl.protocol == "http:"
+            ) {
+              uniqueUrls.add(checkedUrl.href);
+              queue.add(checkedUrl.href);
+            }
+          }
+        });
+        result.push({ url: currentUrl, title: title, urls: [...uniqueUrls] });
+      }
+    } catch (error) {
+      throw new Error(`Caught error while crawling : ${error.message}`);
     }
   }
-  
-  
-  
-  catch (error) {
-    throw new Error(`Caught error while crawling : ${error.message}`);
-  }
-}
-}
 
-// return {
-//   success: true,
-//   url: url,
-//   title: title,
-//   uniqueUrls: [...uniqueUrls]
-// };
+  return {
+    success: true,
+    url: url,
+    pages: result,
+  };
+}
