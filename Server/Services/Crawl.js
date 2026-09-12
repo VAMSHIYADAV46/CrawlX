@@ -1,21 +1,29 @@
 import * as cheerio from "cheerio";
 import axios from "axios";
+import {popFromSet} from '../utilities'
 
 export async function Crawl({ url, maxDepth, sameDomain }) {
   let visited = new Set();
+  let queue = new Set();
+  queue.add(url)
+  
 
+  while(queue.size != 0){
   try {
-    if (!url) {
+    let currentUrl = popFromSet(queue)
+    if (!currentUrl) {
       throw new Error("Invalid Url");
     }
-    if (!visited.has(url)) {
-      const response = await axios.get(url, {
+    if (!visited.has(currentUrl)) {
+      const response = await axios.get(currentUrl, {
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36",
         },
       });
-      visited.add(url);
+      
+      visited.add(currentUrl);
+
 
       const html = response.data;
 
@@ -27,14 +35,20 @@ export async function Crawl({ url, maxDepth, sameDomain }) {
       $("a").each((ind, element) => {
         let link = $(element).attr("href");
         if (link) {
-          let checkedUrl = new URL(link, url);
+          let checkedUrl = new URL(link, currentUrl);
           uniqueUrls.add(checkedUrl.href);
+          queue.add(checkedUrl.href)
         }
       });
     }
-  } catch (error) {
+  }
+  
+  
+  
+  catch (error) {
     throw new Error(`Caught error while crawling : ${error.message}`);
   }
+}
 }
 
 // return {
