@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import axios from "axios";
+import { fetchPage } from "./fetchPage.js";
 
 
 export async function Crawl({ url, maxDepth, sameDomain }) {
@@ -31,16 +31,12 @@ export async function Crawl({ url, maxDepth, sameDomain }) {
       ) {
         console.log("Crawling:", currentUrl, "Depth:", currentDepth);
 
-        const response = await axios.get(currentUrl, {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36",
-          },
-        });
 
+
+        const html = await fetchPage(currentUrl);
         visited.add(currentUrl);
 
-        const html = response.data;
+        
         const $ = cheerio.load(html);
 
         let uniqueUrls = new Set();
