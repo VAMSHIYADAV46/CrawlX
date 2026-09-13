@@ -1,12 +1,15 @@
 import * as cheerio from "cheerio";
 import axios from "axios";
-import { popFirstFromSet } from "../utilities.js";
+
 
 export async function Crawl({ url, maxDepth, sameDomain }) {
   let visited = new Set();
   let queue = new Map();
 
   queue.set(url, 0);
+  const startUrl = new URL(url);
+  const startDomain = startUrl.hostname;
+  console.log(`Domain : ${startDomain}`);
 
   let result = [];
 
@@ -15,11 +18,17 @@ export async function Crawl({ url, maxDepth, sameDomain }) {
       let [currentUrl, currentDepth] = queue.entries().next().value;
       queue.delete(currentUrl);
 
+      console.log("Queue item:", currentUrl, currentDepth);
       if (!currentUrl) {
         throw new Error("Invalid Url");
       }
+      let currentUrlDomain = new URL(currentUrl).hostname;
 
-      if (!visited.has(currentUrl) && currentDepth <= maxDepth) {
+      if (
+        !visited.has(currentUrl) &&
+        currentDepth <= maxDepth &&
+        (!sameDomain || startDomain === currentUrlDomain)
+      ) {
         console.log("Crawling:", currentUrl, "Depth:", currentDepth);
 
         const response = await axios.get(currentUrl, {
@@ -42,28 +51,31 @@ export async function Crawl({ url, maxDepth, sameDomain }) {
           let link = $(element).attr("href");
 
           if (link) {
-            let checkedUrl = new URL(link, currentUrl);
-
-            if (
-              (checkedUrl.protocol == "https:" ||
-                checkedUrl.protocol == "http:") &&
-              currentDepth < maxDepth
-            ) {
-              uniqueUrls.add(checkedUrl.href);
-
+            try {
+              let checkedUrl = new URL(link, currentUrl);
               if (
-                !visited.has(checkedUrl.href) &&
-                !queue.has(checkedUrl.href)
+                (checkedUrl.protocol == "https:" ||
+                  checkedUrl.protocol == "http:") &&
+                currentDepth < maxDepth
               ) {
-                queue.set(checkedUrl.href, currentDepth + 1);
+                uniqueUrls.add(checkedUrl.href);
 
-                console.log(
-                  "Adding:",
-                  checkedUrl.href,
-                  "Depth:",
-                  currentDepth + 1
-                );
+                if (
+                  !visited.has(checkedUrl.href) &&
+                  !queue.has(checkedUrl.href)
+                ) {
+                  queue.set(checkedUrl.href, currentDepth + 1);
+
+                  // console.log(
+                  //   "Adding:",
+                  //   checkedUrl.href,
+                  //   "Depth:",
+                  //   currentDepth + 1
+                  // );
+                }
               }
+            } catch (error) {
+              console.log("Skipping invalid URL:", link);
             }
           }
         });
@@ -75,6 +87,7 @@ export async function Crawl({ url, maxDepth, sameDomain }) {
         });
       }
     } catch (error) {
+      console.log("Actual error:", error);
       throw new Error(`Caught error while crawling : ${error.message}`);
     }
   }
