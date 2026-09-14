@@ -1,6 +1,5 @@
-import * as cheerio from "cheerio";
-import { fetchPage } from "./fetchPage.js";
-
+import fetchPage  from "./fetchPage.js";
+import extractLinks from "./extractLinks.js";
 
 export async function Crawl({ url, maxDepth, sameDomain }) {
   let visited = new Set();
@@ -9,7 +8,6 @@ export async function Crawl({ url, maxDepth, sameDomain }) {
   queue.set(url, 0);
   const startUrl = new URL(url);
   const startDomain = startUrl.hostname;
-  console.log(`Domain : ${startDomain}`);
 
   let result = [];
 
@@ -18,7 +16,9 @@ export async function Crawl({ url, maxDepth, sameDomain }) {
       let [currentUrl, currentDepth] = queue.entries().next().value;
       queue.delete(currentUrl);
 
-      console.log("Queue item:", currentUrl, currentDepth);
+      let storedLinks = new Set();
+
+      
       if (!currentUrl) {
         throw new Error("Invalid Url");
       }
@@ -31,55 +31,43 @@ export async function Crawl({ url, maxDepth, sameDomain }) {
       ) {
         console.log("Crawling:", currentUrl, "Depth:", currentDepth);
 
-
-
         const html = await fetchPage(currentUrl);
+
         visited.add(currentUrl);
 
-        
-        const $ = cheerio.load(html);
+        const {title , links} = extractLinks(html,currentUrl)
 
-        let uniqueUrls = new Set();
 
-        let title = $("title").text().trim();
+        links.forEach((link) => {
+          try {
 
-        $("a").each((ind, element) => {
-          let link = $(element).attr("href");
 
-          if (link) {
-            try {
-              let checkedUrl = new URL(link, currentUrl);
-              if (
-                (checkedUrl.protocol == "https:" ||
-                  checkedUrl.protocol == "http:") &&
-                currentDepth < maxDepth
-              ) {
-                uniqueUrls.add(checkedUrl.href);
+            if (
+              currentDepth < maxDepth &&
+              !visited.has(link) &&
+              !queue.has(link)
+            ) {
 
-                if (
-                  !visited.has(checkedUrl.href) &&
-                  !queue.has(checkedUrl.href)
-                ) {
-                  queue.set(checkedUrl.href, currentDepth + 1);
+              queue.set(link, currentDepth + 1);
+              storedLinks.add(link)
+              
 
-                  // console.log(
-                  //   "Adding:",
-                  //   checkedUrl.href,
-                  //   "Depth:",
-                  //   currentDepth + 1
-                  // );
-                }
-              }
-            } catch (error) {
-              console.log("Skipping invalid URL:", link);
+              // console.log(
+              //   "Adding:",
+              //   link,
+              //   "Depth:",
+              //   currentDepth + 1
+              // );
             }
+          } catch (error) {
+            console.log(`Caught error while iterating links at crawling : ${error.message}`)
           }
         });
 
         result.push({
           url: currentUrl,
           title: title,
-          urls: [...uniqueUrls],
+          urls: [...storedLinks],
         });
       }
     } catch (error) {

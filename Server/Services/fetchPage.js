@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export async function fetchPage(currentUrl) {
+export default async function fetchPage(currentUrl) {
     
         const response = await axios.get(currentUrl, {
           headers: {
