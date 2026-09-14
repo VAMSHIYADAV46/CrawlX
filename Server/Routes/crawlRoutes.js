@@ -1,6 +1,5 @@
-import express from 'express'
-import * as crawlController from '../Controllers/crawlController.js' ;
-
+import express from "express";
+import * as crawlController from "../Controllers/crawlController.js";
 
 const router = express.Router();
 
@@ -12,6 +11,6 @@ const router = express.Router();
 //     console.log("resp : ",resp)
 // })
 
-router.post("/crawl",crawlController.startCrawl)
+router.post("/crawl", crawlController.startCrawl);
 
 export default router;

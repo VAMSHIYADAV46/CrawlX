@@ -14,10 +14,7 @@ export default function extractLinks(html, currentUrl) {
       try {
         let checkedUrl = new URL(link, currentUrl);
 
-        if (
-          checkedUrl.protocol == "https:" ||
-          checkedUrl.protocol == "http:"
-        ) {
+        if (checkedUrl.protocol == "https:" || checkedUrl.protocol == "http:") {
           uniqueUrls.add(checkedUrl.href);
         }
       } catch (error) {

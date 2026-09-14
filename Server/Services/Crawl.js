@@ -1,4 +1,4 @@
-import fetchPage  from "./fetchPage.js";
+import fetchPage from "./fetchPage.js";
 import extractLinks from "./extractLinks.js";
 
 export async function Crawl({ url, maxDepth, sameDomain }) {
@@ -12,13 +12,12 @@ export async function Crawl({ url, maxDepth, sameDomain }) {
   let result = [];
 
   while (queue.size != 0) {
+    let [currentUrl, currentDepth] = queue.entries().next().value;
     try {
-      let [currentUrl, currentDepth] = queue.entries().next().value;
       queue.delete(currentUrl);
 
       let storedLinks = new Set();
 
-      
       if (!currentUrl) {
         throw new Error("Invalid Url");
       }
@@ -35,32 +34,23 @@ export async function Crawl({ url, maxDepth, sameDomain }) {
 
         visited.add(currentUrl);
 
-        const {title , links} = extractLinks(html,currentUrl)
-
+        const { title, links } = extractLinks(html, currentUrl);
 
         links.forEach((link) => {
-          try {
+          if (
+            currentDepth < maxDepth &&
+            !visited.has(link) &&
+            !queue.has(link)
+          ) {
+            queue.set(link, currentDepth + 1);
+            storedLinks.add(link);
 
-
-            if (
-              currentDepth < maxDepth &&
-              !visited.has(link) &&
-              !queue.has(link)
-            ) {
-
-              queue.set(link, currentDepth + 1);
-              storedLinks.add(link)
-              
-
-              // console.log(
-              //   "Adding:",
-              //   link,
-              //   "Depth:",
-              //   currentDepth + 1
-              // );
-            }
-          } catch (error) {
-            console.log(`Caught error while iterating links at crawling : ${error.message}`)
+            // console.log(
+            //   "Adding:",
+            //   link,
+            //   "Depth:",
+            //   currentDepth + 1
+            // );
           }
         });
 
@@ -71,8 +61,15 @@ export async function Crawl({ url, maxDepth, sameDomain }) {
         });
       }
     } catch (error) {
-      console.log("Actual error:", error);
-      throw new Error(`Caught error while crawling : ${error.message}`);
+      console.log(`Failed to Fetch URL : ${currentUrl}`);
+      if (error.response) {
+        console.log(`Failed to Fetch because : ${error.response.status}`);
+      }
+      result.push({
+        url:currentUrl,
+        error : error.message,
+        status: error.response ? error.response.status : null
+      })
     }
   }
 
