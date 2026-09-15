@@ -1,4 +1,6 @@
 import * as cheerio from "cheerio";
+import normalizeUrl from "./normalizeUrl";
+
 
 export default function extractLinks(html, currentUrl) {
   const $ = cheerio.load(html);
@@ -14,8 +16,10 @@ export default function extractLinks(html, currentUrl) {
       try {
         let checkedUrl = new URL(link, currentUrl);
 
+        
+
         if (checkedUrl.protocol == "https:" || checkedUrl.protocol == "http:") {
-          uniqueUrls.add(checkedUrl.href);
+          uniqueUrls.add(normalizeUrl(checkedUrl.href));
         }
       } catch (error) {
         console.log("Skipping invalid URL:", link);
