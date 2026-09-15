@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import normalizeUrl from "./normalizeUrl";
+import normalizeUrl from "./normalizeUrl.js";
 
 
 export default function extractLinks(html, currentUrl) {
